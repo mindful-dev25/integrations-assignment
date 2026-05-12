@@ -101,7 +101,7 @@ export default function PatientDetail() {
                     {result.value} {result.unit}
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {formatDate(result.observation_data)}
+                    {formatDate(result.effective_date)}
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                     {result.accession_number}

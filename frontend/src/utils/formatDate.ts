@@ -1,9 +1,5 @@
-/**
- * Format an observation's effective date for display.
- */
-export function formatDate(observation: Record<string, any>): string {
-  const date = new Date(observation.effectiveDateTime);
-  return date.toLocaleDateString("en-US", {
+export function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
