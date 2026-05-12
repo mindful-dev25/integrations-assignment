@@ -23,23 +23,61 @@ processing: the endpoint does the minimum work needed to safely accept the
 payload, then hands off to a Celery worker.
 
 ```
-Hospital
-  POST /api/webhooks/<team_slug>/fhir/
-        |
-        | < 3 seconds
-        v
-  Django endpoint
-    1. Authenticate (HMAC signature)
-    2. Store raw payload -> WebhookDelivery row
-    3. Enqueue Celery task (delivery_id)
-    4. Return 202 Accepted
-        |
-        | async
-        v
-  Celery worker
-    1. Load delivery from DB
-    2. Call process_fhir_bundle() (existing logic)
-    3. Mark delivery done / failed
+  Hospital A          Hospital B          Hospital C
+(Riverside)          (Lakewood)          (Future)
+     |                    |                   |
+     | POST /api/webhooks/<team_slug>/fhir/   |
+     |    X-Webhook-Signature: <hmac>         |
+     +--------------------+-------------------+
+                          |
+                          v
+              +-----------+------------+
+              |     Django Endpoint    |  < 3s response
+              |------------------------|
+              | 1. Verify HMAC sig     |
+              | 2. INSERT WebhookDelivery (pending)
+              | 3. Enqueue task        |---------> [Redis Queue]
+              | 4. Return 202 Accepted |               |
+              +------------------------+               |
+                          |                            |
+                    202 Accepted                       |
+                    (to hospital)               [Celery Workers]
+                                                       |
+                          +----------------------------+
+                          |
+                          v
+              +-----------+------------+
+              |      Celery Worker     |  no time limit
+              |------------------------|
+              | 1. Load delivery row   |<-----+
+              | 2. process_fhir_bundle |      |
+              | 3. upsert Patient /    |  retry w/
+              |    LabResult records   |  backoff
+              | 4. Mark done / failed  |      |
+              +------------------------+      |
+                    |           |             |
+              [success]     [failure] --------+
+                    |           |          (x3)
+                    v           v
+              status=done   status=failed
+                    |           |
+                    |           +-----------> [Alert: ops notified]
+                    |
+                    v
+         +----------+----------+
+         |     PostgreSQL      |
+         |---------------------|
+         | WebhookDelivery     |
+         | Patient             |
+         | LabResult           |
+         | PatientAllergy      |
+         +----------+----------+
+                    |
+                    v
+         +----------+----------+
+         |   Dashboard (React) |
+         |   /api/teams/...    |
+         +---------------------+
 ```
 
 With this split, the endpoint is doing three cheap operations (auth check, one
