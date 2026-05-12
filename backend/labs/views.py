@@ -10,12 +10,16 @@ from .serializers import (
 
 class PatientListView(generics.ListAPIView):
     serializer_class = PatientListSerializer
-    queryset = Patient.objects.all()
+
+    def get_queryset(self):
+        return Patient.objects.filter(team__slug=self.kwargs["slug"])
 
 
 class PatientDetailView(generics.RetrieveAPIView):
     serializer_class = PatientDetailSerializer
-    queryset = Patient.objects.all()
+
+    def get_queryset(self):
+        return Patient.objects.filter(team__slug=self.kwargs["slug"])
 
 
 class LabResultListView(generics.ListAPIView):
