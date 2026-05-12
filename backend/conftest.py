@@ -68,7 +68,6 @@ def lab_results(patients):
 
 @pytest.fixture
 def allergies(patients):
-    # Only uses non-None criticality values so the test passes with the buggy serializer
     a1 = PatientAllergy.objects.create(
         patient=patients["lw1"],
         substance="Sulfa drugs",
@@ -89,4 +88,13 @@ def allergies(patients):
             "code": {"coding": [{"display": "Aspirin"}]},
         },
     )
-    return [a1, a2]
+    a3 = PatientAllergy.objects.create(
+        patient=patients["lw1"],
+        substance="Penicillin",
+        criticality=None,
+        allergy_data={
+            "resourceType": "AllergyIntolerance",
+            "code": {"coding": [{"display": "Penicillin"}]},
+        },
+    )
+    return [a1, a2, a3]

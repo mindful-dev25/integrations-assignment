@@ -35,7 +35,7 @@ class TestPatientDetailAPI:
             f"/api/teams/lakewood-memorial/patients/{patient.id}/"
         )
         assert response.status_code == 200
-        assert len(response.data["allergies"]) == 2
+        assert len(response.data["allergies"]) == 3
 
     def test_includes_lab_results(self, api_client, patients, lab_results):
         patient = patients["lw1"]

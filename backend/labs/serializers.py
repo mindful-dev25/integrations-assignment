@@ -50,17 +50,11 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_allergies(self, obj):
-        allergy_list = []
-        for allergy in obj.allergies.all():
-            data = allergy.allergy_data
-            criticality = data.get("criticality")
-            if not criticality:
-                continue
-            allergy_list.append(
-                {
-                    "id": allergy.id,
-                    "substance": allergy.substance,
-                    "criticality": criticality,
-                }
-            )
-        return allergy_list
+        return [
+            {
+                "id": allergy.id,
+                "substance": allergy.substance,
+                "criticality": allergy.criticality,
+            }
+            for allergy in obj.allergies.all()
+        ]
